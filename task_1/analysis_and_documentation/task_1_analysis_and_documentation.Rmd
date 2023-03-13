@@ -11,6 +11,11 @@ here::here()
 ```
 
 
+```{r}
+decathalon_new <- read_csv(here::here('clean_data/decathalon_clean'))
+decathalon_new
+```
+
 
 
 

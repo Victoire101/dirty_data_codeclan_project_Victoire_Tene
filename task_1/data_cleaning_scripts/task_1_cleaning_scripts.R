@@ -33,6 +33,6 @@ complete.cases(decathalon_row_remove)
  
  decathalon_clean <- decathalon_row_remove
  
-write.csv(decathalon_clean, "clean_data/decathalon_clean.csv", row.names = FALSE)
+write.csv(decathalon_clean, "clean_data/decathalon_clean", row.names = FALSE)
 decathalon_clean 
  
