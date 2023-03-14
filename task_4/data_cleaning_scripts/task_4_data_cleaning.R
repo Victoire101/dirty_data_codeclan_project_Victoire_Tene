@@ -285,16 +285,37 @@ fifth_clean_2016
 
 
 # more updates to 2017 columns
+
+
 fifth_clean_2017 <-  clean_names(fifth_clean_2017)
 
-names(fifth_clean_2017)
+fifth_clean_2017 <- fifth_clean_2017 %>% 
+  mutate(year = 2017)
+fifth_clean_2017
+
+na_2017_coutry <-  fifth_clean_2017[is.na(fifth_clean_2017$country), ] # checking number of NA
+na_2017_coutry <-  subset(fifth_clean_2017, country == "NA") # checking number of "NA"
+
+fifth_clean_2017 <- fifth_clean_2017 %>% 
+  mutate(country = case_when(country == "NA" ~ NA_character_, 
+                             TRUE ~ country))
+
+fifth_clean_2017 <- fifth_clean_2017 %>% 
+  mutate (country =  str_to_title(country))
+
+fifth_clean_2017 <- fifth_clean_2017 %>% 
+  mutate(country = case_when(country == "Usa" ~ "USA",
+                             country == "Uk" ~ "UK",
+                             TRUE ~ country))
+
+unique_names_country_t <- sort(unique(fifth_clean_2017$country))
+
+## removing the last 2 columns because they are not consistent with the rest of columns
+
+sixth_clean_2017<- select (fifth_clean_2017, -joy_other, - despair_other)
+
+sixth_clean_2017
+fifth_clean_2016
+third_clean_2015
 
 
-# create a sample data frame
-df <- data.frame(x = c(1, 2, 3, 4, 5), y = c("apple", "banana", "cherry", "orange", "mango"))
-
-# create a list of values to match
-fruit_list <- c("apple", "banana", "cherry")
-
-# use ifelse() and %in% to mutate the "y" column based on the list of values
-df <- mutate(df, y = ifelse(y %in% fruit_list, "fruit", "other"))
