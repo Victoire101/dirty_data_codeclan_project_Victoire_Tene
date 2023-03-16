@@ -9,58 +9,66 @@ library(here)
 ```
 
 ```{r}
-candy_2015 <- read_csv('clean_data/clean_data_2015')
-candy_2016 <- read_csv('clean_data/clean_data_2016')
-candy_2017 <- read_csv('clean_data/clean_data_2017')
+candy_2015 <- read_csv(here::here('clean_data/clean_data_2015'))
+candy_2016 <- read_csv(here::here('clean_data/clean_data_2016'))
+candy_2017 <- read_csv(here::here('clean_data/clean_data_2017'))
+```
+
+```{r}
+test_join_2015_2016 <- full_join(candy_2015, candy_2016)
+test_join_2015_2016_2017 <- full_join(test_join_2015_2016, candy_2017)
+full_candy <- test_join_2015_2016_2017
+write.csv(full_candy, here::here("clean_data/full_candy"), row.names = FALSE)
+
 
 ```
 
 ```{r}
-test_join_2015_2016 <- full_join(clean_data_2015, clean_data_2016)
-test_join_2015_2016_2017 <- full_join(test_join_2015_2016, clean_data_2017)
-full_candy <- test_join_2015_2016_2017
-
+full_candy %>% 
+  names()
 ```
-
 
 
 Q1. What is the total number of candy ratings given across the three years. (Number of candy ratings, not the number of raters. Don’t count missing values)
 
 ```{r}
-full_candy %>% 
-  names()
-
+ 
+  
 candies_only <- select(full_candy, - timestamp, -age, -going_out, -year,
                        -hugs_actual_physical_hugs, -state_province_county_etc, -country, -gender)
-names(candies_only)
+names <- names(candies_only)
 
-sum(!is.na(candies_only))
+ total <-sum(!is.na(candies_only))
 
-```
-
-```{r}
-joy <- sum(str_count(full_candy, "JOY")) # 277,361
- meh <- sum(str_count(full_candy, "MEH")) # 79,418
-despair <- sum(str_count(full_candy, "DESPAIR")) # 274,993
-
-total = joy + meh + despair
+total_number_of_candy_rating <-  paste('the total number of candy rating is : ',  total , sep = '')
+                                        
+total_number_of_candy_rating
 ```
 
 Q2. What was the average age of people who are going out trick or treating?
+
 ```{r}
 
 going_out <- subset(full_candy, going_out == "Yes" & age >= 1 & age <= 100)
 
-mean(going_out$age, na.rm = TRUE)
+ mean_age <- mean(going_out$age, na.rm = TRUE)
 
+avg_age_of_people_going_out <- paste('the average of people going out trick or treating is ', 
+                               mean_age, sep = '' )
 
+avg_age_of_people_going_out
 ```
+
 Q3. What was the average age of people who are not going trick or treating?
 ```{r}
 going_out_no <- subset(full_candy, going_out == "No" & age >= 1 & age <= 100)
 
-mean(going_out_no$age, na.rm = TRUE)
+mean_age_1 <- mean(going_out_no$age, na.rm = TRUE)
 
+avg_age_of_people_not_going_out <- paste('the average of people not going out trick or treating is ', 
+                               mean_age_1, sep = '' )
+
+avg_age_of_people_not_going_out
 ```
 Q4. For each of joy, despair and meh, which candy bar received the most of these ratings?
 
@@ -95,12 +103,12 @@ despair <- rating_count %>%
 joy
 meh
 despair
-all
 
- all <- rating_count %>% 
-  slice_max(rating ) %>% 
-  arrange(desc(n))
-
+answer <- paste( 'Joy: any_full_sized_candy_bar, Meh: lollipops, Despair: broken_glow_stick ')
+                   
+                   
+answer
+ 
 ```
 
 
@@ -109,51 +117,17 @@ Q5.How many people rated Starburst as despair?
 ```{r}
 rating_count %>% 
   filter(candies == "starburst",rating == "DESPAIR") 
-  
-```
 
+ 
+```
 
  For the next three questions, count despair as -1, joy as +1, and meh as 0.
 
 Q6. What was the most popular candy bar by this rating system for each gender in the dataset ?
 
 ```{r}
-# changing the rating column to 1, -1 and 0
+## reassigning and re positioning year, country and gender to the data set
 
-rating_count_new <- rating_count %>% 
-  mutate(rating = case_when(rating == "DESPAIR" ~ "-1",
-                            rating == "JOY" ~ "1",
-                            rating == "MEH" ~ "0",
-                            TRUE ~ rating))
-
- # converting rating column to numeric
-
-rating_count_new_numeric <- rating_count_new %>% 
-  mutate(rating = as.numeric(rating))
-
-# calculating the sum of rating for each candy
-
-rating_count_new_numeric_sum <- rating_count_new_numeric %>% 
-  filter( rating == -1 | rating == 1 |rating == 0) %>% 
-  mutate( new_rating = rating * n ) %>% 
-group_by(candies) %>% 
-summarise(sum_rating = sum(new_rating))
-
-# reordering the table descendant to see the highest rated candy
-
-rating_count_new_numeric_sum_ordered <- rating_count_new_numeric_sum %>% 
-  arrange(desc(sum_rating))
-
-rating_count
-rating_count_new
-rating_count_new_numeric
-rating_count_new_numeric_sum
-rating_count_new_numeric_sum_ordered
-```
-
-Q7. What was the most popular candy bar in each year?
-
-```{r}
 full_candy_new <- select(full_candy, - timestamp, -age, -going_out, 
                        -hugs_actual_physical_hugs, -state_province_county_etc) %>% 
   mutate(year = as.character(year)) %>% 
@@ -161,19 +135,23 @@ full_candy_new <- select(full_candy, - timestamp, -age, -going_out,
   relocate(gender, .before = year) %>% 
   relocate(country, .after = year)
 
+# pivoting the full_candy_new table 
 
 full_candy_new_long  <- pivot_longer(full_candy_new,
                                    cols = c(1:98),
                                    names_to = "candies",
                                    values_to = "rating")
 
-#######################################################################
+# counting the rating and converting gender to NA where the answers were not wrong
+
 rating_count_full_candy <- full_candy_new_long %>% 
   count(candies, rating, year, gender,country)  %>% 
   mutate ( gender = case_when(gender == "I'd rather not say" ~ NA_character_ ,
                               gender == "Other" ~ NA_character_,
                               gender == "NA" ~ NA_character_,
                               TRUE ~ gender))
+
+# converting the rating column to -1. 1, and 0 
 
 rating_count_full_candy_new <- rating_count_full_candy %>% 
   mutate(rating = case_when(rating == "DESPAIR" ~ "-1",
@@ -186,34 +164,107 @@ rating_count_full_candy_new <- rating_count_full_candy %>%
 rating_count_full_candy_new_numeric <- rating_count_full_candy_new %>% 
   mutate(rating = as.numeric(rating))
 
-# calculating the sum of rating for each candy
+# calculating the sum of rating for each candy per gender
 
-rating_count_full_candy_new_sum <- rating_count_full_candy_new_numeric %>% 
+popular_candy_by_gender <- rating_count_full_candy_new_numeric %>% 
   filter( rating == -1 | rating == 1 |rating == 0) %>% 
   mutate( new_rating = rating * n ) %>% 
 group_by(candies, gender) %>%
 summarise(sum_rating = sum(new_rating)) 
   
 
-# reordering the table descendant to see the highest rated candy
+# filtering by gender and reordering the table descendant to see the highest rated candy
 
-rating_count_full_candy_new_sum %>% 
- #slice_max( gender == "Male") %>% 
-  filter(gender == "Female") %>% 
+male_popular_candy <- popular_candy_by_gender %>% 
+ filter( gender == "Male") %>% 
 arrange(desc(sum_rating))
 
-rating_count
-rating_count_new
-rating_count_new_numeric
-rating_count_new_numeric_sum
-rating_count_new_numeric_sum_ordered
+female_popular_candy <- popular_candy_by_gender %>% 
+ filter( gender == "Female") %>% 
+arrange(desc(sum_rating))
 
+male_popular_candy
+female_popular_candy
 
 ```
 
+Q7. What was the most popular candy bar in each year?
 
 ```{r}
-u <- unique(full_candy_new$gender)
-```
+popular_candy_by_year <- rating_count_full_candy_new_numeric %>% 
+  filter( rating == -1 | rating == 1 |rating == 0) %>% 
+  mutate( new_rating = rating * n ) %>% 
+group_by(candies, year) %>%
+summarise(sum_rating = sum(new_rating)) 
 
+
+# filtering by year and reordering the table descendant to see the highest rated candy
+
+popular_candy_2015 <- popular_candy_by_year %>% 
+ filter(year == "2015") %>% 
+arrange(desc(sum_rating))
+
+popular_candy_2016 <- popular_candy_by_year %>% 
+ filter(year == "2016") %>% 
+arrange(desc(sum_rating))
+
+popular_candy_2017 <- popular_candy_by_year %>% 
+ filter(year == "2017") %>% 
+arrange(desc(sum_rating))
+
+popular_candy_2015
+popular_candy_2016
+popular_candy_2017
+
+```
+Q8. What was the most popular candy bar by this rating for people in US, Canada, UK, and all other countries?
+
+```{r}
+popular_candy_by_country <- rating_count_full_candy_new_numeric %>% 
+  filter( rating == -1 | rating == 1 |rating == 0) %>% 
+  mutate( new_rating = rating * n ) %>% 
+group_by(candies, country) %>%
+summarise(sum_rating = sum(new_rating)) 
+
+popular_candy_USA <- popular_candy_by_country %>% 
+ filter(country == "USA") %>% 
+arrange(desc(sum_rating))
+
+popular_candy_Canada <- popular_candy_by_country %>% 
+ filter(country == "Canada") %>% 
+arrange(desc(sum_rating))
+
+
+popular_candy_UK <- popular_candy_by_country %>% 
+ filter(country == "UK") %>% 
+arrange(desc(sum_rating))
+
+
+popular_candy_USA
+popular_candy_Canada
+popular_candy_UK
+```
+ 
+ 
+ Q8. all other countries
+```{r}
+
+popular_candy_by_country_other <- rating_count_full_candy_new_numeric %>% 
+  filter(!is.na(country)) %>%
+  filter(country != "USA" & country != "Canada" & country != "UK") %>% 
+  filter( rating == -1 | rating == 1 |rating == 0) %>% 
+  mutate( new_rating = rating * n ) %>% 
+group_by(candies) %>%
+ summarise(sum_rating = sum(new_rating)) %>% 
+arrange(desc(sum_rating))  
+  
+  
+
+
+ all_other <- max(popular_candy_by_country_other$sum_rating) 
+  
+ question_8_for_all_other <- paste("The most popular candy for all other country is any_full_sized_candy_bar with a rating of ",  all_other, sep = ''  )
+ 
+  question_8_for_all_other
+```
 

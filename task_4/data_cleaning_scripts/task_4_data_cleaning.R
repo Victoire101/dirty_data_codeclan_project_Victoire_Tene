@@ -332,12 +332,12 @@ na_2017_age <-  fifth_clean_2017[is.na(fifth_clean_2017$age), ] ## 108 NAs
 
 
 
-write.csv(clean_data_2015, "clean_data/clean_data_2015", row.names = FALSE)
-clean_data_2015 
+ # write.csv(clean_data_2015, "clean_data/clean_data_2015", row.names = FALSE)
+ # clean_data_2015 
 
-write.csv(clean_data_2016, "clean_data/clean_data_2016", row.names = FALSE)
-clean_data_2016 
+ # write.csv(clean_data_2016, "clean_data/clean_data_2016", row.names = FALSE)
+ # clean_data_2016 
 
-write.csv(clean_data_2017, "clean_data/clean_data_2017", row.names = FALSE)
-clean_data_2017 
+ # write.csv(clean_data_2017, "clean_data/clean_data_2017", row.names = FALSE)
+ # clean_data_2017 
 
