@@ -1,0 +1,219 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library (tidyverse)
+library(here)
+```
+
+```{r}
+candy_2015 <- read_csv('clean_data/clean_data_2015')
+candy_2016 <- read_csv('clean_data/clean_data_2016')
+candy_2017 <- read_csv('clean_data/clean_data_2017')
+
+```
+
+```{r}
+test_join_2015_2016 <- full_join(clean_data_2015, clean_data_2016)
+test_join_2015_2016_2017 <- full_join(test_join_2015_2016, clean_data_2017)
+full_candy <- test_join_2015_2016_2017
+
+```
+
+
+
+Q1. What is the total number of candy ratings given across the three years. (Number of candy ratings, not the number of raters. Don’t count missing values)
+
+```{r}
+full_candy %>% 
+  names()
+
+candies_only <- select(full_candy, - timestamp, -age, -going_out, -year,
+                       -hugs_actual_physical_hugs, -state_province_county_etc, -country, -gender)
+names(candies_only)
+
+sum(!is.na(candies_only))
+
+```
+
+```{r}
+joy <- sum(str_count(full_candy, "JOY")) # 277,361
+ meh <- sum(str_count(full_candy, "MEH")) # 79,418
+despair <- sum(str_count(full_candy, "DESPAIR")) # 274,993
+
+total = joy + meh + despair
+```
+
+Q2. What was the average age of people who are going out trick or treating?
+```{r}
+
+going_out <- subset(full_candy, going_out == "Yes" & age >= 1 & age <= 100)
+
+mean(going_out$age, na.rm = TRUE)
+
+
+```
+Q3. What was the average age of people who are not going trick or treating?
+```{r}
+going_out_no <- subset(full_candy, going_out == "No" & age >= 1 & age <= 100)
+
+mean(going_out_no$age, na.rm = TRUE)
+
+```
+Q4. For each of joy, despair and meh, which candy bar received the most of these ratings?
+
+```{r}
+candies_only
+
+# pivot longer on the candies columns
+
+candies_only_long  <- pivot_longer(candies_only,
+                                   cols = c(1:98),
+                                   names_to = "candies",
+                                   values_to = "rating")
+
+# counting number of rating per candy
+ 
+rating_count <- candies_only_long %>% 
+  count(candies, rating)  
+
+
+joy <- rating_count %>% 
+  slice_max(rating == "JOY") %>% 
+  arrange(desc(n))
+
+meh <- rating_count %>% 
+  slice_max(rating == "MEH") %>% 
+  arrange(desc(n))
+
+despair <- rating_count %>% 
+  slice_max(rating == "DESPAIR") %>% 
+  arrange(desc(n))
+
+joy
+meh
+despair
+all
+
+ all <- rating_count %>% 
+  slice_max(rating ) %>% 
+  arrange(desc(n))
+
+```
+
+
+Q5.How many people rated Starburst as despair?
+
+```{r}
+rating_count %>% 
+  filter(candies == "starburst",rating == "DESPAIR") 
+  
+```
+
+
+ For the next three questions, count despair as -1, joy as +1, and meh as 0.
+
+Q6. What was the most popular candy bar by this rating system for each gender in the dataset ?
+
+```{r}
+# changing the rating column to 1, -1 and 0
+
+rating_count_new <- rating_count %>% 
+  mutate(rating = case_when(rating == "DESPAIR" ~ "-1",
+                            rating == "JOY" ~ "1",
+                            rating == "MEH" ~ "0",
+                            TRUE ~ rating))
+
+ # converting rating column to numeric
+
+rating_count_new_numeric <- rating_count_new %>% 
+  mutate(rating = as.numeric(rating))
+
+# calculating the sum of rating for each candy
+
+rating_count_new_numeric_sum <- rating_count_new_numeric %>% 
+  filter( rating == -1 | rating == 1 |rating == 0) %>% 
+  mutate( new_rating = rating * n ) %>% 
+group_by(candies) %>% 
+summarise(sum_rating = sum(new_rating))
+
+# reordering the table descendant to see the highest rated candy
+
+rating_count_new_numeric_sum_ordered <- rating_count_new_numeric_sum %>% 
+  arrange(desc(sum_rating))
+
+rating_count
+rating_count_new
+rating_count_new_numeric
+rating_count_new_numeric_sum
+rating_count_new_numeric_sum_ordered
+```
+
+Q7. What was the most popular candy bar in each year?
+
+```{r}
+full_candy_new <- select(full_candy, - timestamp, -age, -going_out, 
+                       -hugs_actual_physical_hugs, -state_province_county_etc) %>% 
+  mutate(year = as.character(year)) %>% 
+  relocate( year, .after = take_5) %>% 
+  relocate(gender, .before = year) %>% 
+  relocate(country, .after = year)
+
+
+full_candy_new_long  <- pivot_longer(full_candy_new,
+                                   cols = c(1:98),
+                                   names_to = "candies",
+                                   values_to = "rating")
+
+#######################################################################
+rating_count_full_candy <- full_candy_new_long %>% 
+  count(candies, rating, year, gender,country)  %>% 
+  mutate ( gender = case_when(gender == "I'd rather not say" ~ NA_character_ ,
+                              gender == "Other" ~ NA_character_,
+                              gender == "NA" ~ NA_character_,
+                              TRUE ~ gender))
+
+rating_count_full_candy_new <- rating_count_full_candy %>% 
+  mutate(rating = case_when(rating == "DESPAIR" ~ "-1",
+                            rating == "JOY" ~ "1",
+                            rating == "MEH" ~ "0",
+                            TRUE ~ rating))
+
+ # converting rating column to numeric
+
+rating_count_full_candy_new_numeric <- rating_count_full_candy_new %>% 
+  mutate(rating = as.numeric(rating))
+
+# calculating the sum of rating for each candy
+
+rating_count_full_candy_new_sum <- rating_count_full_candy_new_numeric %>% 
+  filter( rating == -1 | rating == 1 |rating == 0) %>% 
+  mutate( new_rating = rating * n ) %>% 
+group_by(candies, gender) %>%
+summarise(sum_rating = sum(new_rating)) 
+  
+
+# reordering the table descendant to see the highest rated candy
+
+rating_count_full_candy_new_sum %>% 
+ #slice_max( gender == "Male") %>% 
+  filter(gender == "Female") %>% 
+arrange(desc(sum_rating))
+
+rating_count
+rating_count_new
+rating_count_new_numeric
+rating_count_new_numeric_sum
+rating_count_new_numeric_sum_ordered
+
+
+```
+
+
+```{r}
+u <- unique(full_candy_new$gender)
+```
+
+

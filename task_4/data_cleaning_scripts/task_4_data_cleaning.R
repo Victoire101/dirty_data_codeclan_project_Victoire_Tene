@@ -3,6 +3,7 @@ library(janitor)
 library (here)
 library (readxl)
 library (sqldf)
+library(dplyr)
 
 # Importing our raw data
 
@@ -102,12 +103,12 @@ names(third_clean_2016)
 ## 2017 data
 
 
- # colnames(second_clean_2017) <- gsub("^.{3}", "", colnames(second_clean_2017))
+ colnames(second_clean_2017) <- gsub("^.{3}", "", colnames(second_clean_2017))
 
 #the above code removes  the 3 first characters from 2017 dataset the columns names, commenting this it so i don't run it a second time.
-#second_clean_2017 <- rename( second_clean_2017, internal_id = ernal_id)
+ second_clean_2017 <- rename( second_clean_2017, internal_id = ernal_id)
 
-
+names(second_clean_2017)
 third_clean_2017 <- second_clean_2017 %>%
   rename(
     ##  x100_grand_bar = 100_grand_bar,
@@ -127,7 +128,7 @@ third_clean_2017 <- second_clean_2017 %>%
 names(third_clean_2017)
 
 
-## ocnverting age column to double
+## converting age column to double
 
 third_clean_2015$age <- as.integer(third_clean_2015$age)
 third_clean_2016$age <- as.integer(third_clean_2016$age)
@@ -312,10 +313,31 @@ unique_names_country_t <- sort(unique(fifth_clean_2017$country))
 
 ## removing the last 2 columns because they are not consistent with the rest of columns
 
-sixth_clean_2017<- select (fifth_clean_2017, -joy_other, - despair_other)
 
-sixth_clean_2017
-fifth_clean_2016
-third_clean_2015
+sixth_clean_2017 <-  select (fifth_clean_2017, -joy_other, -despair_other, -state_province_county_etc, -internal_id)
 
+sixth_clean_2016 <-  select (fifth_clean_2016, -timestamp)
+
+
+clean_data_2017 <- sixth_clean_2017
+clean_data_2016 <- sixth_clean_2016
+clean_data_2015 <- third_clean_2015
+
+## checking NA in age column
+
+na_2016_age <-  fifth_clean_2016[is.na(fifth_clean_2016$age), ] ## 68 NAs
+na_2015_age <-  third_clean_2015[is.na(third_clean_2015$age), ] ## 285 NAs
+na_2017_age <-  fifth_clean_2017[is.na(fifth_clean_2017$age), ] ## 108 NAs
+
+
+
+
+write.csv(clean_data_2015, "clean_data/clean_data_2015", row.names = FALSE)
+clean_data_2015 
+
+write.csv(clean_data_2016, "clean_data/clean_data_2016", row.names = FALSE)
+clean_data_2016 
+
+write.csv(clean_data_2017, "clean_data/clean_data_2017", row.names = FALSE)
+clean_data_2017 
 
